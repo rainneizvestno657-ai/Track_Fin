@@ -196,9 +196,10 @@ class GoalsView(customtkinter.CTkFrame):
         if not goals:
             customtkinter.CTkLabel(
                 self.goals_container,
-                text="—",
-                font=("Segoe UI", 22, "bold"), text_color="#444444",
-            ).pack(pady=20)
+                text=self.t("empty_goals"),
+                font=("Segoe UI", 12), text_color="#555555",
+                justify="center",
+            ).pack(pady=30, padx=20)
             return
 
         for idx, goal in enumerate(goals):
@@ -297,6 +298,14 @@ class GoalsView(customtkinter.CTkFrame):
 
         customtkinter.CTkFrame(table, height=1, fg_color="#3A3A40").grid(
             row=1, column=0, columnspan=4, sticky="ew", pady=(0, 8))
+
+        if not self.dm.savings_history:
+            customtkinter.CTkLabel(
+                card, text=self.t("empty_savings"),
+                font=("Segoe UI", 12), text_color="#555555",
+                justify="center",
+            ).pack(pady=20, padx=20)
+            return
 
         r = 2
         for entry in self.dm.savings_history:

@@ -42,23 +42,27 @@ class AnalyticsView(customtkinter.CTkFrame):
 
     # ──────────────────────────────────────────
     def _init_banner(self, parent):
-        pct = self.dm.get_expense_change_percent()
-        pct_color = "#E05656" if pct >= 0 else "#56E056"
-        pct_str = f"{abs(pct):.0f}%"
-
-        # Prefix and suffix depend on direction; word order differs per language
-        if pct >= 0:
-            prefix = self.t("an_banner_prefix_up")
-            suffix = self.t("an_banner_suffix_up")
-        else:
-            prefix = self.t("an_banner_prefix_dn")
-            suffix = self.t("an_banner_suffix_dn")
-
         card = customtkinter.CTkFrame(
             parent, fg_color="#232328", corner_radius=12,
             border_width=1, border_color="#2A4D2C",
         )
         card.pack(fill="x", padx=15, pady=(0, 15))
+
+        # Пустое состояние — нет данных
+        if self.dm.prev_monthly_expenses == 0 and self.dm.monthly_expenses == 0:
+            customtkinter.CTkLabel(
+                card, text=self.t("empty_analytics"),
+                font=("Segoe UI", 16, "bold"), text_color="#555555",
+                justify="center",
+            ).pack(pady=26, padx=20)
+            return
+
+        pct = self.dm.get_expense_change_percent()
+        pct_color = "#E05656" if pct >= 0 else "#56E056"
+        pct_str = f"{abs(pct):.0f}%"
+
+        prefix = self.t("an_banner_prefix_up") if pct >= 0 else self.t("an_banner_prefix_dn")
+        suffix = self.t("an_banner_suffix_up") if pct >= 0 else self.t("an_banner_suffix_dn")
 
         row = customtkinter.CTkFrame(card, fg_color="transparent")
         row.pack(pady=22)
@@ -187,6 +191,14 @@ class AnalyticsView(customtkinter.CTkFrame):
 
         customtkinter.CTkFrame(table, height=1, fg_color="#3A3A40").grid(
             row=1, column=0, columnspan=4, sticky="ew", pady=(0, 8))
+
+        if not self.dm.analytics_comparison:
+            customtkinter.CTkLabel(
+                card, text=self.t("empty_comparison"),
+                font=("Segoe UI", 12), text_color="#555555",
+                justify="center",
+            ).pack(pady=20, padx=20)
+            return
 
         r = 2
         for comp in self.dm.analytics_comparison:

@@ -310,26 +310,33 @@ class TransactionsView(customtkinter.CTkFrame):
                                font=("Segoe UI", 13, "bold"), text_color="#FFFFFF",
                                ).pack(anchor="w", padx=20, pady=(15, 10))
 
-        expenses = self.data_manager.category_expenses
-        max_amount = max(c["amount"] for c in expenses) if expenses else 1.0
+        expenses   = self.data_manager.category_expenses
+        max_amount = max((c["amount"] for c in expenses), default=1.0)
 
-        for cat_data in expenses:
-            cat_name = cat_data["category"]
-            cat_amt  = cat_data["amount"]
-            ratio    = cat_amt / max_amount if max_amount > 0 else 0.0
+        if not expenses:
+            customtkinter.CTkLabel(
+                card, text=self.t("empty_tx_cat"),
+                font=("Segoe UI", 12), text_color="#555555",
+                justify="center",
+            ).pack(pady=20, padx=20)
+        else:
+            for cat_data in expenses:
+                cat_name = cat_data["category"]
+                cat_amt  = cat_data["amount"]
+                ratio    = cat_amt / max_amount if max_amount > 0 else 0.0
 
-            row = customtkinter.CTkFrame(card, fg_color="transparent")
-            row.pack(fill="x", padx=20, pady=(6, 1))
+                row = customtkinter.CTkFrame(card, fg_color="transparent")
+                row.pack(fill="x", padx=20, pady=(6, 1))
 
-            customtkinter.CTkLabel(row, text=cat_name,
-                                   font=("Segoe UI", 12), text_color="#CCCCCC").pack(side="left")
-            customtkinter.CTkLabel(row, text=format_kgs(cat_amt),
-                                   font=("Segoe UI", 12, "bold"), text_color="#FFFFFF").pack(side="right")
+                customtkinter.CTkLabel(row, text=cat_name,
+                                       font=("Segoe UI", 12), text_color="#CCCCCC").pack(side="left")
+                customtkinter.CTkLabel(row, text=format_kgs(cat_amt),
+                                       font=("Segoe UI", 12, "bold"), text_color="#FFFFFF").pack(side="right")
 
-            bar = customtkinter.CTkProgressBar(card, height=3, corner_radius=2,
-                                               fg_color="#1E2A1E", progress_color="#56E056")
-            bar.pack(fill="x", padx=20, pady=(0, 4))
-            bar.set(ratio)
+                bar = customtkinter.CTkProgressBar(card, height=3, corner_radius=2,
+                                                   fg_color="#1E2A1E", progress_color="#56E056")
+                bar.pack(fill="x", padx=20, pady=(0, 4))
+                bar.set(ratio)
 
         customtkinter.CTkFrame(card, fg_color="transparent", height=4).pack()
 
@@ -380,6 +387,14 @@ class TransactionsView(customtkinter.CTkFrame):
         customtkinter.CTkFrame(table, height=1, fg_color="#2A2A2E").grid(
             row=1, column=0, columnspan=4, sticky="ew", pady=(0, 6))
 
+        if not self.data_manager.transactions:
+            customtkinter.CTkLabel(
+                table, text=self.t("empty_tx_history"),
+                font=("Segoe UI", 12), text_color="#555555",
+                justify="center",
+            ).grid(row=2, column=0, columnspan=4, pady=24)
+            return
+
         r = 2
         for tx in self.data_manager.transactions:
             date_vendor = f"{tx['date']}  {tx['vendor']}"
@@ -429,9 +444,10 @@ class TransactionsView(customtkinter.CTkFrame):
         # ── Пустое состояние: цель не задана ──────────────────────
         if not name or total <= 0:
             customtkinter.CTkLabel(
-                card, text="—",
-                font=("Segoe UI", 22, "bold"), text_color="#444444",
-            ).pack(expand=True, pady=(10, 18))
+                card, text=self.t("empty_goal_card"),
+                font=("Segoe UI", 12), text_color="#555555",
+                justify="center",
+            ).pack(expand=True, pady=(10, 18), padx=18)
             return
 
         # ── Цель задана ───────────────────────────────────────────

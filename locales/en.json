@@ -158,5 +158,13 @@
   "faq_q7": "What is the difference between .JSON, .CSV and .EXCEL?",
   "faq_a7": "JSON — full backup. CSV — table for Excel/Google Sheets. EXCEL — .xlsx with colored headers for analysis.",
   "faq_q8": "What currency is used?",
-  "faq_a8": "Kyrgyz som (с). Amounts use a dot as the thousands separator: 48.200 с."
+  "faq_a8": "Kyrgyz som (с). Amounts use a dot as the thousands separator: 48.200 с.",
+
+  "empty_tx_cat":      "No expenses yet.\nAdd transactions to see the category breakdown.",
+  "empty_tx_history":  "No transactions yet.\nClick '+ Add' to get started.",
+  "empty_goal_card":   "No active goal.\nCreate one in the Goals section.",
+  "empty_analytics":   "Analytics will appear\nafter your first transactions.",
+  "empty_comparison":  "No data to compare yet.\nAdd transactions — the report will build itself.",
+  "empty_goals":       "No goals yet.\nClick '+ Create goal' to get started.",
+  "empty_savings":     "No savings yet.\nAdd funds to any goal to begin."
 }
