@@ -1,5 +1,4 @@
 import customtkinter
-from core.utils import format_kgs
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -99,6 +98,7 @@ class CategoriesView(customtkinter.CTkFrame):
         self.controller = controller
         self.dm = controller.data_manager
         self.t = controller.t
+        self.fmt = self.dm.format_amount
 
         scroll = customtkinter.CTkScrollableFrame(
             self, fg_color="transparent",
@@ -151,10 +151,7 @@ class CategoriesView(customtkinter.CTkFrame):
         categories = self.dm.categories
         row, col = 0, 0
         for idx, cat in enumerate(categories):
-            if cat["name"] == "Другое":
-                card = self._build_other_card(cat, idx)
-            else:
-                card = self._build_category_card(cat, idx)
+            card = self._build_category_card(cat, idx)
             card.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
             col += 1
             if col > 1:
@@ -177,6 +174,13 @@ class CategoriesView(customtkinter.CTkFrame):
         ).pack(side="left")
 
         customtkinter.CTkButton(
+            top, text="🗑", width=28, height=28,
+            font=("Segoe UI", 13), fg_color="transparent",
+            hover_color="#4D1515", text_color="#E05656",
+            command=lambda i=idx: self._handle_delete_category(i),
+        ).pack(side="right", padx=(4, 0))
+
+        customtkinter.CTkButton(
             top, text="✏", width=28, height=28,
             font=("Segoe UI", 14), fg_color="transparent",
             hover_color="#2A4D2C", text_color="#FFFFFF",
@@ -184,7 +188,7 @@ class CategoriesView(customtkinter.CTkFrame):
         ).pack(side="right")
 
         customtkinter.CTkLabel(
-            card, text=f"{self.t('cat_limit_lbl')} {format_kgs(cat['limit'])}",
+            card, text=f"{self.t('cat_limit_lbl')} {self.fmt(cat['limit'])}",
             font=("Segoe UI", 12), text_color="#AAFFAA",
         ).pack(anchor="w", padx=15, pady=(4, 6))
 
@@ -202,7 +206,7 @@ class CategoriesView(customtkinter.CTkFrame):
         bottom.pack(fill="x", padx=15, pady=(0, 14))
 
         customtkinter.CTkLabel(
-            bottom, text=f"{self.t('cat_spent_lbl')} {format_kgs(cat['spent'])} · {pct:.0f}%",
+            bottom, text=f"{self.t('cat_spent_lbl')} {self.fmt(cat['spent'])} · {pct:.0f}%",
             font=("Segoe UI", 11), text_color="#CCCCCC",
         ).pack(side="left")
 
@@ -211,32 +215,6 @@ class CategoriesView(customtkinter.CTkFrame):
             bottom, text=f"{pct:.0f}%",
             font=("Segoe UI", 13, "bold"), text_color=pct_badge_color,
         ).pack(side="right")
-
-        return card
-
-    def _build_other_card(self, cat, idx):
-        card = customtkinter.CTkFrame(
-            self.grid_frame, fg_color="#2A2A30",
-            corner_radius=12, border_width=1, border_color="#3A3A40",
-        )
-
-        customtkinter.CTkLabel(
-            card, text=cat["name"],
-            font=("Segoe UI", 16, "bold"), text_color="#CCCCCC",
-        ).pack(anchor="w", padx=15, pady=(14, 4))
-
-        customtkinter.CTkLabel(
-            card, text=f"{self.t('cat_spent_lbl')} {format_kgs(cat['spent'])}",
-            font=("Segoe UI", 13), text_color="#999999",
-        ).pack(anchor="w", padx=15, pady=(0, 10))
-
-        customtkinter.CTkButton(
-            card, text=self.t("cat_other_btn"),
-            font=("Segoe UI", 12, "bold"), fg_color="#3A3A40",
-            hover_color="#4A4A50", text_color="#FFFFFF",
-            height=32, corner_radius=8,
-            command=lambda: None,
-        ).pack(padx=15, pady=(0, 14))
 
         return card
 
@@ -256,4 +234,8 @@ class CategoriesView(customtkinter.CTkFrame):
 
     def _handle_edit(self, idx, name, icon, limit):
         self.dm.edit_category(idx, name, icon, limit)
+        self._render_cards()
+
+    def _handle_delete_category(self, idx):
+        self.dm.delete_category(idx)
         self._render_cards()

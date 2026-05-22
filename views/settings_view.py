@@ -30,6 +30,8 @@ class SettingsView(customtkinter.CTkFrame):
 
         self._init_header(scroll)
         self._init_lang_card(scroll)
+        self._init_currency_card(scroll)
+        self._init_period_stats_card(scroll)
         self._init_main_panels(scroll)
         self._init_extra_options(scroll)
         self._init_folder_row(scroll)
@@ -86,8 +88,148 @@ class SettingsView(customtkinter.CTkFrame):
             ).pack(side="left", padx=(0, 8))
 
     def _switch_lang(self, code: str):
-        self.dm.locale.set_lang(code)
+        self.dm.set_language(code)
         self.controller.refresh_language()
+
+    # ──────────────────────────────────────────
+    def _init_currency_card(self, parent):
+        card = customtkinter.CTkFrame(parent, fg_color="#232328",
+                                      corner_radius=12, border_width=1, border_color="#2A4D2C")
+        card.pack(fill="x", padx=15, pady=(0, 15))
+
+        customtkinter.CTkLabel(card, text=self.t("settings_currency_title"),
+                               font=("Segoe UI", 13, "bold"), text_color="#FFFFFF",
+                               ).pack(anchor="w", padx=18, pady=(14, 10))
+
+        btn_row = customtkinter.CTkFrame(card, fg_color="transparent")
+        btn_row.pack(fill="x", padx=18, pady=(0, 8))
+
+        currencies = [
+            ("som", "Сом  (с)"),
+            ("usd", "Доллар  ($)"),
+            ("rub", "Рубль  (₽)"),
+        ]
+        current = self.dm.currency
+        for code, name in currencies:
+            is_active = (code == current)
+            customtkinter.CTkButton(
+                btn_row, text=name,
+                font=("Segoe UI", 12, "bold"),
+                fg_color="#1E351F" if is_active else "transparent",
+                border_width=1,
+                border_color="#56E056" if is_active else "#2A4D2C",
+                hover_color="#1E351F",
+                text_color="#FFFFFF" if is_active else "#888888",
+                height=34, corner_radius=8, width=120,
+                command=lambda c=code: self._switch_currency(c),
+            ).pack(side="left", padx=(0, 8))
+
+        rates_text = f"1 $ = 87.47 с   ·   1 ₽ = 1.24 с"
+        customtkinter.CTkLabel(card, text=f"{self.t('settings_currency_rate')}  {rates_text}",
+                               font=("Segoe UI", 11), text_color="#555555",
+                               ).pack(anchor="w", padx=18, pady=(0, 12))
+
+    def _switch_currency(self, code: str):
+        self.dm.set_currency(code)
+        self.controller.refresh_currency()
+
+    # ──────────────────────────────────────────
+    def _init_period_stats_card(self, parent):
+        card = customtkinter.CTkFrame(parent, fg_color="#232328",
+                                      corner_radius=12, border_width=1, border_color="#2A4D2C")
+        card.pack(fill="x", padx=15, pady=(0, 15))
+
+        customtkinter.CTkLabel(card, text=self.t("settings_period_title"),
+                               font=("Segoe UI", 13, "bold"), text_color="#FFFFFF",
+                               ).pack(anchor="w", padx=18, pady=(14, 4))
+
+        customtkinter.CTkLabel(card, text=self.t("settings_period_hint"),
+                               font=("Segoe UI", 11), text_color="#555555",
+                               ).pack(anchor="w", padx=18, pady=(0, 10))
+
+        btn_row = customtkinter.CTkFrame(card, fg_color="transparent")
+        btn_row.pack(fill="x", padx=18, pady=(0, 10))
+
+        self._period_btns = {}
+        periods = [
+            ("day",   "settings_period_day"),
+            ("week",  "settings_period_week"),
+            ("month", "settings_period_month"),
+            ("year",  "settings_period_year"),
+        ]
+        for code, key in periods:
+            is_active = (code == self.dm.active_period)
+            btn = customtkinter.CTkButton(
+                btn_row, text=self.t(key),
+                font=("Segoe UI", 12, "bold"),
+                fg_color="#1E351F" if is_active else "transparent",
+                border_width=1,
+                border_color="#56E056" if is_active else "#2A4D2C",
+                hover_color="#1E351F",
+                text_color="#FFFFFF" if is_active else "#888888",
+                height=34, corner_radius=8, width=90,
+                command=lambda c=code: self._select_period(c),
+            )
+            btn.pack(side="left", padx=(0, 8))
+            self._period_btns[code] = btn
+
+        self._period_result = customtkinter.CTkFrame(
+            card, fg_color="#1A2A1B", corner_radius=8,
+            border_width=1, border_color="#2A4D2C")
+        self._period_result.pack(fill="x", padx=18, pady=(0, 14))
+
+        self._period_income_lbl = customtkinter.CTkLabel(
+            self._period_result, text="",
+            font=("Segoe UI", 12, "bold"), text_color="#56E056")
+        self._period_income_lbl.pack(anchor="w", padx=14, pady=(10, 2))
+
+        self._period_expense_lbl = customtkinter.CTkLabel(
+            self._period_result, text="",
+            font=("Segoe UI", 12, "bold"), text_color="#E05656")
+        self._period_expense_lbl.pack(anchor="w", padx=14, pady=(0, 2))
+
+        self._period_bar = customtkinter.CTkProgressBar(
+            self._period_result, height=6, corner_radius=3,
+            fg_color="#3D1515", progress_color="#56E056")
+        self._period_bar.pack(fill="x", padx=14, pady=(4, 10))
+        self._period_bar.set(0)
+
+        # Show stats for the currently saved period immediately
+        self._refresh_period_display(self.dm.active_period)
+
+    def _select_period(self, period: str):
+        # Save choice to DataManager (persisted to DB)
+        self.dm.set_period(period)
+
+        # Update button styles
+        for code, btn in self._period_btns.items():
+            if code == period:
+                btn.configure(fg_color="#1E351F", border_color="#56E056", text_color="#FFFFFF")
+            else:
+                btn.configure(fg_color="transparent", border_color="#2A4D2C", text_color="#888888")
+
+        self._refresh_period_display(period)
+
+        # Also refresh Transactions screen if it is the currently active screen
+        if self.controller.current_screen_id == "transactions":
+            self.controller._render_active_screen("transactions")
+
+    def _refresh_period_display(self, period: str):
+        stats = self.dm.get_period_stats(period)
+        fmt   = self.dm.format_amount
+
+        if stats["income"] == 0 and stats["expenses"] == 0:
+            self._period_income_lbl.configure(
+                text=self.t("settings_period_no_data"), text_color="#555555")
+            self._period_expense_lbl.configure(text="")
+            self._period_bar.set(0)
+        else:
+            self._period_income_lbl.configure(
+                text=f"↑ {self.t('settings_period_income_lbl')}  {fmt(stats['income'])}  ({stats['income_pct']:.0f}%)",
+                text_color="#56E056")
+            self._period_expense_lbl.configure(
+                text=f"↓ {self.t('settings_period_expense_lbl')}  {fmt(stats['expenses'])}  ({stats['expense_pct']:.0f}%)")
+            self._period_bar.set(stats["income_pct"] / 100)
 
     # ──────────────────────────────────────────
     def _init_main_panels(self, parent):
@@ -274,9 +416,10 @@ class SettingsView(customtkinter.CTkFrame):
             return
 
         fmt = self._selected_format.get()
+        password = self.entry_password.get().strip() if self._encrypt_var.get() else ""
 
         try:
-            path = self.dm.export_data(what, fmt, folder)
+            path = self.dm.export_data(what, fmt, folder, password=password)
             mb.showinfo("", self.t("export_done", path=path))
         except Exception as exc:
             mb.showerror("", self.t("export_err", error=exc))

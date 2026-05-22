@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(anthropic-skills:docx)",
+      "Skill(anthropic-skills:docx:*)",
+      "Bash(python -c ' *)",
+      "Bash(python -m py_compile core/data_manager.py views/analytics_view.py views/categories_view.py views/goals_view.py views/settings_view.py views/help_view.py main.py)",
+      "Bash(python -m py_compile main.py)",
+      "Bash(dir /s /b)",
+      "Bash(xargs grep -l \"format_kgs\")",
+      "Bash(awk -F. '{print $NF}')",
+      "Bash(.venv/Scripts/python.exe -c ' *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git rebase *)",
+      "Bash(git filter-branch *)",
+      "Bash(python -m py_compile core/data_manager.py views/transactions_view.py views/categories_view.py views/goals_view.py views/settings_view.py)",
+      "Bash(.venv\\\\Scripts\\\\pip install *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('track_fin_all.py'\\).read\\(\\)\\); print\\('Syntax OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('track_fin_all.py', encoding='utf-8'\\).read\\(\\)\\); print\\('Syntax OK'\\)\")",
+      "Bash(.venv\\\\Scripts\\\\python.exe -c \"from core.data_manager import DataManager; dm = DataManager\\(\\); print\\('DB ok, drafts:', dm.drafts\\); stats = dm.get_period_stats\\('month'\\); print\\('Period stats:', stats\\)\")",
+      "Bash(python -c \"from core.data_manager import DataManager; from views.goals_view import GoalsView; dm = DataManager\\(\\); print\\('active_goal_index:', dm.active_goal_index\\); print\\('set_active_goal exists:', hasattr\\(dm, 'set_active_goal'\\)\\); print\\('_sync_active_goal exists:', hasattr\\(dm, '_sync_active_goal'\\)\\); print\\('_handle_pin_goal check: GoalsView has method:', hasattr\\(GoalsView, '_handle_pin_goal'\\)\\); print\\('OK'\\)\")",
+      "Bash(mkdir \"C:\\\\Users\\\\mow49\\\\Desktop\\\\TrackFin\")"
+    ]
+  }
+}

@@ -88,6 +88,7 @@ class WindowManager(customtkinter.CTk):
     # Language refresh — update nav labels + re-render current screen
     # ─────────────────────────────────────────────────────────────
     def refresh_language(self) -> None:
+        self.data_manager.refresh_category_names()
         for item in self.menu_items:
             btn = self.nav_buttons[item["id"]]
             new_text = f"{item['icon']}  {self.t(item['key'])}"
@@ -161,6 +162,10 @@ class WindowManager(customtkinter.CTk):
             self.switch_screen(self.history_stack.pop(), add_to_history=False)
 
     Maps_back = navigate_back   # legacy alias
+
+    def refresh_currency(self) -> None:
+        if self.current_screen_id:
+            self._render_active_screen(self.current_screen_id)
 
     def open_fast_add_transaction(self):
         from views.transactions_view import FastAddTransactionModal

@@ -1,14 +1,15 @@
 import customtkinter
-from core.utils import format_kgs
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 class CreateGoalModal(customtkinter.CTkToplevel):
-    def __init__(self, parent, on_confirm):
+    def __init__(self, parent, on_confirm, prefill=None):
         super().__init__(parent)
         self.t = parent.t
-        self.title(self.t("create_goal_title"))
-        self.geometry("400x340")
+        is_edit = prefill is not None
+        title_key = "create_goal_title_edit" if is_edit else "create_goal_title"
+        self.title(self.t(title_key))
+        self.geometry("400x410")
         self.resizable(False, False)
         self.configure(fg_color="#0B0B0C")
         self.transient(parent)
@@ -16,7 +17,7 @@ class CreateGoalModal(customtkinter.CTkToplevel):
         self.on_confirm = on_confirm
 
         customtkinter.CTkLabel(
-            self, text=self.t("create_goal_title"),
+            self, text=self.t(title_key),
             font=("Segoe UI", 16, "bold"), text_color="#FFFFFF",
         ).pack(pady=(20, 15))
 
@@ -37,11 +38,18 @@ class CreateGoalModal(customtkinter.CTkToplevel):
         self.entry_target = _field(self.t("create_goal_target"), self.t("create_goal_tgt_ph"))
         self.entry_months = _field(self.t("create_goal_months"), self.t("create_goal_mo_ph"))
 
+        if prefill:
+            self.entry_name.insert(0, prefill["name"])
+            self.entry_icon.insert(0, prefill.get("icon", ""))
+            self.entry_target.insert(0, str(int(prefill["target"])))
+            self.entry_months.insert(0, str(int(prefill["months_left"])))
+
         btn_frame = customtkinter.CTkFrame(self, fg_color="transparent")
         btn_frame.pack(pady=(0, 20))
 
+        btn_label = self.t("btn_save") if is_edit else self.t("btn_create")
         customtkinter.CTkButton(
-            btn_frame, text=self.t("btn_create"),
+            btn_frame, text=btn_label,
             font=("Segoe UI", 14, "bold"), fg_color="#1E351F",
             hover_color="#2A4D2C", text_color="#FFFFFF", height=35,
             command=self._confirm,
@@ -141,6 +149,7 @@ class GoalsView(customtkinter.CTkFrame):
         self.controller = controller
         self.dm = controller.data_manager
         self.t = controller.t
+        self.fmt = self.dm.format_amount
 
         scroll = customtkinter.CTkScrollableFrame(
             self, fg_color="transparent",
@@ -225,7 +234,7 @@ class GoalsView(customtkinter.CTkFrame):
 
         customtkinter.CTkLabel(
             card,
-            text=f"{format_kgs(goal['saved'])} / {format_kgs(goal['target'])}",
+            text=f"{self.fmt(goal['saved'])} / {self.fmt(goal['target'])}",
             font=("Segoe UI", 14, "bold"), text_color="#FFFFFF",
         ).pack(anchor="w", padx=14, pady=(0, 8))
 
@@ -239,7 +248,7 @@ class GoalsView(customtkinter.CTkFrame):
         pct_done = ratio * 100
         customtkinter.CTkLabel(
             card,
-            text=f"{self.t('goals_remaining_lbl')} {format_kgs(remaining)} · {pct_done:.0f}%",
+            text=f"{self.t('goals_remaining_lbl')} {self.fmt(remaining)} · {pct_done:.0f}%",
             font=("Segoe UI", 11), text_color="#AAFFAA",
         ).pack(anchor="w", padx=14, pady=(0, 4))
 
@@ -252,13 +261,55 @@ class GoalsView(customtkinter.CTkFrame):
             font=("Segoe UI", 11), text_color="#888888",
         ).pack(anchor="w", padx=14, pady=(0, 8))
 
+        # ── Pin hint (shown only when this goal is the active one) ──
+        is_pinned = (idx == self.dm.active_goal_index)
+        if is_pinned:
+            pin_hint = customtkinter.CTkFrame(card, fg_color="#1A3A1A",
+                                              corner_radius=6, border_width=1,
+                                              border_color="#56E056")
+            pin_hint.pack(fill="x", padx=14, pady=(0, 8))
+            customtkinter.CTkLabel(pin_hint,
+                                   text=f"✓  {self.t('goals_pinned_hint')}",
+                                   font=("Segoe UI", 10, "bold"),
+                                   text_color="#56E056").pack(pady=4)
+
+        btn_row = customtkinter.CTkFrame(card, fg_color="transparent")
+        btn_row.pack(padx=14, pady=(0, 14), fill="x")
+
         customtkinter.CTkButton(
-            card, text=self.t("goals_btn_fill"),
+            btn_row, text=self.t("goals_btn_fill"),
             font=("Segoe UI", 11, "bold"), fg_color="#2A4D2C",
             hover_color="#56E056", text_color="#FFFFFF",
             height=28, corner_radius=6,
             command=lambda i=idx: self._open_add_saving(i),
-        ).pack(padx=14, pady=(0, 14), fill="x")
+        ).pack(side="left", fill="x", expand=True, padx=(0, 6))
+
+        # 📌 Pin button — shows goal in Transactions "My Goal" card
+        customtkinter.CTkButton(
+            btn_row, text="📌", width=34, height=28,
+            font=("Segoe UI", 13),
+            fg_color="#1E351F" if is_pinned else "transparent",
+            hover_color="#1E351F",
+            text_color="#56E056" if is_pinned else "#555555",
+            corner_radius=6,
+            command=lambda i=idx: self._handle_pin_goal(i),
+        ).pack(side="right", padx=(0, 4))
+
+        customtkinter.CTkButton(
+            btn_row, text="🗑", width=34, height=28,
+            font=("Segoe UI", 13), fg_color="#2A1515",
+            hover_color="#4D1515", text_color="#E05656",
+            corner_radius=6,
+            command=lambda i=idx: self._handle_delete_goal(i),
+        ).pack(side="right")
+
+        customtkinter.CTkButton(
+            btn_row, text="✏", width=34, height=28,
+            font=("Segoe UI", 13), fg_color="#1A2A1A",
+            hover_color="#2A4D2C", text_color="#AAFFAA",
+            corner_radius=6,
+            command=lambda i=idx: self._open_edit_goal_modal(i),
+        ).pack(side="right", padx=(0, 4))
 
         return card
 
@@ -312,7 +363,7 @@ class GoalsView(customtkinter.CTkFrame):
             customtkinter.CTkLabel(table, text=entry["date"],
                                    font=("Segoe UI", 11), text_color="#FFFFFF", anchor="w",
                                    ).grid(row=r, column=0, sticky="ew", pady=5, padx=(0, 8))
-            customtkinter.CTkLabel(table, text=f"+{format_kgs(entry['amount'])}",
+            customtkinter.CTkLabel(table, text=f"+{self.fmt(entry['amount'])}",
                                    font=("Segoe UI", 11, "bold"), text_color="#56E056", anchor="w",
                                    ).grid(row=r, column=1, sticky="ew", pady=5, padx=(0, 8))
             customtkinter.CTkLabel(table, text=entry["goal"],
@@ -343,6 +394,16 @@ class GoalsView(customtkinter.CTkFrame):
         self.dm.add_goal(name, icon, target, months)
         self._render_goal_cards()
 
+    def _open_edit_goal_modal(self, idx):
+        prefill = self.dm.goals[idx]
+        CreateGoalModal(self.winfo_toplevel(),
+                        lambda n, ic, t, m: self._handle_edit_goal(idx, n, ic, t, m),
+                        prefill=prefill)
+
+    def _handle_edit_goal(self, idx, name, icon, target, months):
+        self.dm.edit_goal(idx, name, icon, target, months)
+        self.controller.switch_screen("goals", add_to_history=False)
+
     def _open_add_saving(self, idx):
         goal_name = self.dm.goals[idx]["name"]
         AddSavingModal(self.winfo_toplevel(), goal_name,
@@ -351,3 +412,15 @@ class GoalsView(customtkinter.CTkFrame):
     def _handle_saving(self, idx, amount):
         self.dm.add_saving_to_goal(idx, amount)
         self.controller.switch_screen("goals", add_to_history=False)
+
+    def _handle_delete_goal(self, idx):
+        self.dm.delete_goal(idx)
+        self.controller.switch_screen("goals", add_to_history=False)
+
+    def _handle_pin_goal(self, idx):
+        # Toggle: click on already-pinned goal → unpin; otherwise pin
+        if idx == self.dm.active_goal_index:
+            self.dm.set_active_goal(-1)
+        else:
+            self.dm.set_active_goal(idx)
+        self._render_goal_cards()
